@@ -3,14 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import styles from "./Company.module.css"; // Ensure CSS file exists
 import pfp from "/assests/propfp.jpg";
-
+import { useLocation } from "react-router-dom"; // Import useLocation
 function Company() {
   const { email } = useParams(); // Get company email from URL
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
+  const location = useLocation();
+const loggedInEmail = location.state?.loggedInEmail || ""; // Get logged-in email from state
   // Fetch products
   useEffect(() => {
     if (email) {
@@ -39,7 +40,7 @@ function Company() {
   // Navigate to view product details with email
   const handleViewProduct = ( email) => {
     {console.log(email)}
-    navigate(`/ProductPage/${email}`);
+    navigate(`/ProductPage/${email}`,{ state: { loggedInEmail } });
     
   };
 

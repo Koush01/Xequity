@@ -6,7 +6,7 @@ import imagem2 from "../../../assests/product_image2.jpeg";
 import imagem3 from "../../../assests/product_image3.jpeg";
 import { Link } from "react-router-dom"; // Ensure React Router is imported
 
-export const Hero = ({ product=[], email }) => {
+export const Hero = ({ product=[], email , loggedInEmail}) => {
   const sliderImages = product[0]?.images?.length > 0 ? product[0].images : [];
   
   {console.log(email)}
@@ -45,6 +45,14 @@ export const Hero = ({ product=[], email }) => {
           <img key={index} src={image} alt={`Slide ${index + 1}`} className={styles.sliderImage} />
         ))}
       </div>
+
+       {/* Show Buttons Only If Logged-In User Matches Product Owner */}
+       {loggedInEmail === email && (
+        <div className={styles.buttonContainer}>
+          <button className={styles.buyTokens}>Buy Tokens</button>
+          <button className={styles.gainEquity}>Gain Equity</button>
+        </div>
+      )}
     </div>
   );
 };
