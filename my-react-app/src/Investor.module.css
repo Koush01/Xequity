@@ -127,3 +127,14 @@
 .aboutItem1:last-child {
     border-bottom: none; /* Remove border for the last item */
 }
+
+.noResults{
+    color:white;
+    font-size: larger;
+}
+
+.filterTagMessage{
+    margin-left: 150px;
+    margin-bottom: 20px;
+    color: white;
+}

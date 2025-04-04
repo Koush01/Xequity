@@ -11,11 +11,17 @@ import SignUp from "./SignUP/SignUp";
 import Footer from './Footer';
 import Company from "./Company/Company";
 import Insert from "./InsertProduct/Insert";
-import CreatePost from "./CreatePost";
 import Forum from "./Forum"; // Import Form.jsx
+import InvestorsByTag from "./InvestorsByTag"; // Filter Investors by Tag
+import ProductsByTag from "./ProductsByTag"; // Filter Products by Tag
+import CreatePost from "./CreatePost";
+import Update from "./Company/Update";
+import MyInvestment from "./MyInvestment";
+import VirtualAssets from "./VirtualAssets";
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
+
   return (
     <Router>
       <Headbar
@@ -34,7 +40,6 @@ function App() {
           element={<Login setIsLoggedIn={setIsLoggedIn} setUserData={setUserData} />}
         />
         <Route path="/CreatePost" element={isLoggedIn ? <CreatePost useremail={userData?.email} username = {userData?.name}/> : <Navigate to="/register" />} />
-        
         <Route path="/investor" element={isLoggedIn ? <Investor /> : <Navigate to="/login" />} />
         <Route path="/InvestorPage" element={isLoggedIn ? <InvestorPage /> : <Navigate to="/login" />} />
         <Route path="/product" element={isLoggedIn ? <Product useremail={userData?.email} /> : <Navigate to="/login" />} />
@@ -48,6 +53,11 @@ function App() {
           path="/add-product/:email"
           element={isLoggedIn && userData?.type === "company" ? <Insert /> : <Navigate to="/login" />}
         />
+        <Route path="/investors/tag/:tagName" element={<InvestorsByTag />} />
+        <Route path="/products-by-tag/:tag" element={<ProductsByTag />} />
+        <Route path="/update-product/:email" element={<Update />} />
+        <Route path="/MyInvestment/:email" element={isLoggedIn ? <MyInvestment/> : <Navigate to="/login" />} />
+        <Route path="/VirtualAssets" element={isLoggedIn ? <VirtualAssets /> : <Navigate to="/login" />} />
       </Routes>
       <Footer />
     </Router>

@@ -9,21 +9,38 @@ function Insert() {
   const [formData, setFormData] = useState({
     productName: "",
     description: "",
-    tags: [],
+    tags: [""], // Tags stored as an array of strings
     team: [{ name: "", position: "" }],
   });
   const [error, setError] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
 
+  // Handle text input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "tags") {
-      setFormData({ ...formData, tags: value.split(",").map(tag => tag.trim()).filter(tag => tag !== "") });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: value });
   };
 
+  // Handle changes in the tags array
+  const handleTagChange = (index, e) => {
+    const updatedTags = [...formData.tags];
+    updatedTags[index] = e.target.value;
+    setFormData({ ...formData, tags: updatedTags });
+  };
+
+  // Add a new tag field
+  const addTag = () => {
+    setFormData({ ...formData, tags: [...formData.tags, ""] });
+  };
+
+  // Remove a tag field
+  const removeTag = (index) => {
+    const updatedTags = [...formData.tags];
+    updatedTags.splice(index, 1);
+    setFormData({ ...formData, tags: updatedTags });
+  };
+
+  // Handle team member input changes
   const handleTeamChange = (index, e) => {
     const { name, value } = e.target;
     const updatedTeam = [...formData.team];
@@ -31,10 +48,12 @@ function Insert() {
     setFormData({ ...formData, team: updatedTeam });
   };
 
+  // Add a new team member
   const addTeamMember = () => {
     setFormData({ ...formData, team: [...formData.team, { name: "", position: "" }] });
   };
 
+  // Handle image selection
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length < 1) {
@@ -45,32 +64,38 @@ function Insert() {
     setError("");
   };
 
+  // Submit the form
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Ensure required fields are not empty
     if (!formData.productName || !formData.description || formData.tags.length === 0 || imageFiles.length < 1 || !email) {
-      setError("All fields and at least one image are required");
+      setError("All fields and at least one image are required.");
       return;
     }
 
     const formDataToSend = new FormData();
     formDataToSend.append("productName", formData.productName);
     formDataToSend.append("description", formData.description);
-    formDataToSend.append("tags", JSON.stringify(formData.tags));
     formDataToSend.append("email", email);
     
+    // Add tags as an array
+    formData.tags.forEach((tag, index) => {
+      formDataToSend.append(`tags[${index}]`, tag);
+    });
+
+    // Add team members
     formData.team.forEach((member, index) => {
       formDataToSend.append(`team[${index}][name]`, member.name);
       formDataToSend.append(`team[${index}][position]`, member.position);
     });
     
+    // Add images
     imageFiles.forEach((file) => {
       formDataToSend.append("images", file);
     });
-    
+
     try {
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0] + ": " + pair[1]);
-      }
       await axios.post("http://localhost:3001/add-product", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -90,8 +115,24 @@ function Insert() {
       <form onSubmit={handleSubmit}>
         <input type="text" name="productName" placeholder="Product Name" value={formData.productName} onChange={handleChange} required />
         <textarea name="description" placeholder="Description" value={formData.description} onChange={handleChange} required />
-        <input type="text" name="tags" placeholder="Tags (comma separated)" value={formData.tags.join(", ")} onChange={handleChange} required />
-        
+
+        <h3>Tags</h3>
+        {formData.tags.map((tag, index) => (
+          <div key={index}>
+            <input 
+              type="text" 
+              placeholder="Tag" 
+              value={tag} 
+              onChange={(e) => handleTagChange(index, e)} 
+              required 
+            />
+            {formData.tags.length > 1 && (
+              <button type="button" onClick={() => removeTag(index)}>Remove</button>
+            )}
+          </div>
+        ))}
+        <button type="button" onClick={addTag}>+ Add Tag</button>
+
         <h3>Team Members</h3>
         {formData.team.map((member, index) => (
           <div key={index}>

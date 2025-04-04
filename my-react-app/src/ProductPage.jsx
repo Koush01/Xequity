@@ -9,6 +9,7 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  {console.log(email)}
   // Fetch product details (optional)
   useEffect(() => {
     axios
@@ -34,7 +35,7 @@ const ProductPage = () => {
       ) : error ? (
         <p style={{ color: "red" }}>{error}</p>
       ) : (
-        <Hero product={product} email={email} />
+        <Hero product={Array.isArray(product) ? product : [product]} email={email} />
       )}
     </div>
   );

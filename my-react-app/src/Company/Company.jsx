@@ -37,13 +37,15 @@ function Company() {
   };
 
   // Navigate to view product details with email
-  const handleViewProduct = ( productEmail) => {
-    navigate(`/ProductPage/${productEmail}`);
+  const handleViewProduct = ( email) => {
+    {console.log(email)}
+    navigate(`/ProductPage/${email}`);
+    
   };
 
   // Navigate to update product
-  const handleUpdateProduct = (product_email) => {
-    navigate(`/update-product/${product_email}`);
+  const handleUpdateProduct = (email) => {
+    navigate(`/update-product/${email}`);
   };
 
   // Delete product
@@ -93,6 +95,7 @@ function Company() {
                   <button className={styles.viewButton} onClick={() => handleViewProduct(product.email)}>
                     View
                   </button>
+                  
                   <button className={styles.updateButton} onClick={() => handleUpdateProduct(product.email)}>
                     Update
                   </button>

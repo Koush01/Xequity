@@ -2,23 +2,26 @@ import React, { useEffect, useState } from "react";
 import myImage from "./assets/Investor.png";
 import styles from "./Investor.module.css";
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 
 function Investor() {
     const [profiles, setProfiles] = useState([]); // State to hold investor profiles
     const [profilePics, setProfilePics] = useState({});
 
-    // Fetch profiles on component mount
-    useEffect(() => {
-        fetch("http://localhost:3001/profiles")
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.status === "Success") {
-                    // Filter only investors
-                    const investorProfiles = data.profiles.filter(profile => profile.type === "investor");
-                    setProfiles(investorProfiles);
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+    const query = searchParams.get("q") || "";
 
-                    investorProfiles.forEach(profile => {
+    useEffect(() => {
+        const fetchInvestors = async () => {
+            try {
+                const response = await fetch(`http://localhost:3001/investors?q=${query}`);
+                const data = await response.json();
+                if (data.status === "Success") {
+                    setProfiles(data.investors);
+
+                    data.investors.forEach(profile => {
                         axios.get(`http://localhost:3001/profile/photo/${profile.email}`)
                             .then((response) => {
                                 if (response.data.profilePic) {
@@ -30,12 +33,14 @@ function Investor() {
                             })
                             .catch((err) => console.error(`Error fetching image for ${profile.email}`, err));
                     });
-                } else {
-                    console.error("Failed to fetch profiles");
                 }
-            })
-            .catch((err) => console.error(err));
-    }, []);
+            } catch (error) {
+                console.error("Failed to fetch investors:", error);
+            }
+        };
+
+        fetchInvestors();
+    }, [query]); // Fetch data whenever the search query changes
 
     return (
         <div className={styles.Body}>
@@ -66,7 +71,9 @@ function Investor() {
                             </Link>
                         ))
                     ) : (
-                        <p className={styles.noInvestors}>No investors available.</p>
+                        <p className={styles.noResults}>
+                            No investors match your search "<b>{query}</b>"
+                        </p>
                     )}
                 </section>
             </div>

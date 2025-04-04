@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import "./Headbar.css";
 import projectlogo from "./assets/logo_text.png";
 import searchicon from "./assets/search_icon.png";
+import SearchBar from "./SearchBar/SearchBar";
 
 function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,8 +57,8 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
           </NavLink>
         </li>
         <li>
-          <NavLink to="/launch" className={({ isActive }) => (isActive ? "active-link" : "")}>
-            Launch
+          <NavLink to="/VirtualAssets" className={({ isActive }) => (isActive ? "active-link" : "")}>
+            Virtual Assets
           </NavLink>
         </li>
         <li>
@@ -67,10 +68,7 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
         </li>
       </ul>
 
-      <div className="search-box">
-        <input type="text" placeholder="Search" />
-        <img src={searchicon} alt="Search Icon" className="logo" />
-      </div>
+      <SearchBar></SearchBar>
 
       <div className="hamburger-icon" onClick={toggleMenu}>
         <div className={`bar ${menuOpen ? "open" : ""}`}></div>

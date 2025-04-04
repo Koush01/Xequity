@@ -9,18 +9,18 @@ const ProfileInfoSchema = new mongoose.Schema({
     type: { type: String, enum: ["company", "investor"], required: true }, // Type field with enum constraint
     experience: [
         {
-            companyName: { type: String, required: true },
-            role: { type: String, required: true },
-            startYear: { type: Number, required: true },
-            endYear: { type: Number, required: true },
+            companyName: { type: String },
+            role: { type: String },
+            startYear: { type: Number },
+            endYear: { type: Number },
         },
     ], // Array for multiple experiences
     education: [
         {
-            schoolName: { type: String, required: true },
-            startYear: { type: Number, required: true },
-            endYear: { type: Number, required: true },
-            courseName: { type: String, required: true },
+            schoolName: { type: String },
+            startYear: { type: Number },
+            endYear: { type: Number },
+            courseName: { type: String },
         },
     ],
     location: String,
@@ -41,7 +41,11 @@ const ProfileInfoSchema = new mongoose.Schema({
             comment: String,
             createdAt: { type: Date, default: Date.now }
         }
-    ]
+    ],
+    tags: {
+        type: [String], 
+        
+    } // Array of tags, each of type String
 });
 
 const ProfileInfoModel = mongoose.model("ProfileInfo", ProfileInfoSchema);
