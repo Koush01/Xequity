@@ -6,7 +6,7 @@ const ProfileInfoSchema = new mongoose.Schema({
     email: { type: String, unique: true, required: true }, // Ensure email is unique and required
     mobile: String,
     headline: String,
-    type: { type: String, enum: ["company", "investor"], required: true }, // Type field with enum constraint
+    type: { type: String, enum: ["company", "investor", "admin"], required: true }, // Type field with enum constraint
     experience: [
         {
             companyName: { type: String },

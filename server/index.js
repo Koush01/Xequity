@@ -14,7 +14,7 @@ const AdminModel = require("./models/admin");
 const ProductModel = require("./models/Product");  // Import Product.js model
 const UnverifiedUser = require("./models/Unverified");  // Adjust path if needed
 const VirtualTokenModel = require("./models/VirtualToken");
-
+const UserTokenModel = require("./models/UserToken");
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -142,6 +142,54 @@ app.post('/admin/login', async (req, res) => {
         res.status(500).json({ status: "Error", message: "Server error" });
     }
 });
+
+// ======================== API to fetch user tokens by email ======================== //
+app.get("/api/user-tokens/:email", async (req, res) => {
+    try {
+        const { email } = req.params;
+        const userTokens = await UserTokenModel.findOne({ email });
+
+        if (!userTokens) {
+            return res.status(404).json({ message: "User tokens not found" });
+        }
+
+        res.json(userTokens.tokens); // Return only the tokens array
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+});
+
+app.get("/api/virtual-assets", async (req, res) => {
+    try {
+        const assets = await VirtualTokenModel.find();
+        res.json(assets);
+    } catch (error) {
+        console.error("Error fetching virtual assets:", error.message); // Log error message
+        res.status(500).json({ error: error.message }); // Send actual error message
+    }
+});
+app.get("/api/virtual-assets-with-product/:email", async (req, res) => {
+    const { email } = req.params;
+
+    try {
+        const tokenData = await VirtualTokenModel.findOne({ email });
+        const productData = await ProductInfoModel.findOne({ email });
+
+        if (!tokenData) {
+            return res.status(404).json({ message: "Token not found" });
+        }
+
+        if (!productData) {
+            return res.status(404).json({ message: "Product info not found" });
+        }
+
+        res.json({ token: tokenData, product: productData });
+    } catch (error) {
+        console.error("Error fetching token and product data:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
 
 
 
@@ -934,31 +982,6 @@ app.post("/admin/reject-user/:email", async (req, res) => {
     }
 });
 
-// ======================== API to fetch user tokens by email ======================== //
-app.get("/api/user-tokens/:email", async (req, res) => {
-    try {
-        const { email } = req.params;
-        const userTokens = await UserTokenModel.findOne({ email });
-
-        if (!userTokens) {
-            return res.status(404).json({ message: "User tokens not found" });
-        }
-
-        res.json(userTokens.tokens); // Return only the tokens array
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-});
-
-app.get("/api/virtual-assets", async (req, res) => {
-    try {
-        const assets = await VirtualTokenModel.find();
-        res.json(assets);
-    } catch (error) {
-        console.error("Error fetching virtual assets:", error.message); // Log error message
-        res.status(500).json({ error: error.message }); // Send actual error message
-    }
-});
 // ======================== SERVER START ======================== //
 
 app.listen(3001, () => {
