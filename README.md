@@ -20,6 +20,8 @@ This is a full stack web application designed to make it easier for startups to 
 <ul>
 <li>The platform requires users to sign in or create an account as either an investor or a founder.</li>
 
+<li>The application includes an admin approval system, where user registrations and key actions require admin verification to maintain transparency and control within the platform.</li>
+
 <li>After registration, users can complete their profile by adding details such as name, contact information, education, and experience.</li>
 
 <li>Users can also add relevant tags to their profiles to improve visibility and discoverability.</li>
