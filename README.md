@@ -37,13 +37,10 @@ This is a full stack web application designed to make it easier for startups to 
 # Get Started
 
 <ul>
-<li>open the terminal<li>
+<li>open the terminal</li>
 <li>cd my-react-app</li>
-
-<li>npm install<li>
-
-<li>npm install react-router-dom<li>
-
+<li>npm install</li>
+<li>npm install react-router-dom</li>
 <li>npm run dev</li>
 
 <li>open a new terminal</li>
