@@ -4,6 +4,7 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { Heap } = require("heap-js");
 
 const UserModel = require("./models/User");
 const ProfileInfoModel = require("./models/ProfileInfo");
@@ -15,6 +16,10 @@ const ProductModel = require("./models/Product");  // Import Product.js model
 const UnverifiedUser = require("./models/Unverified");  // Adjust path if needed
 const VirtualTokenModel = require("./models/VirtualToken");
 const UserTokenModel = require("./models/UserToken");
+const BuyBidModel = require("./models/BuyBid");
+const SellBidModel = require("./models/SellBid");
+const BuyTicketModel = require("./models/BuyTicket");
+const SellTicketModel = require("./models/SellTicket");
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -144,6 +149,396 @@ app.post('/admin/login', async (req, res) => {
 });
 
 // ======================== API to fetch user tokens by email ======================== //
+
+
+
+// API to get top 10 sell bids sorted by quantity (highest first)
+app.get('/api/sell-bids/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        // Find the sell bids document for this company
+        const sellBidsDoc = await SellBidModel.findOne({ email });
+
+        // If no document found or no bids array, return empty array
+        const sellBids = sellBidsDoc?.bids || [];
+
+        // Sort bids by quantity (descending - highest quantity first)
+        // And limit to top 10
+        const sortedBids = sellBids
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 10);
+
+        res.status(200).json({
+            message: 'Top 10 sell bids by quantity retrieved successfully',
+            sellBids: sortedBids
+        });
+    } catch (error) {
+        console.error('Error fetching sell bids:', error);
+        res.status(200).json({
+            message: 'Error occurred but returning empty array',
+            sellBids: []
+        });
+    }
+});
+
+// API to get top 10 buy bids sorted by quantity (highest first)
+app.get('/api/buy-bids/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+
+        // Find the buy bids document for this company
+        const buyBidsDoc = await BuyBidModel.findOne({ email });
+
+        // If no document found or no bids array, return empty array
+        const buyBids = buyBidsDoc?.bids || [];
+
+        // Sort bids by quantity (descending - highest quantity first)
+        // And limit to top 10
+        const sortedBids = buyBids
+            .sort((a, b) => b.quantity - a.quantity)
+            .slice(0, 10);
+
+        res.status(200).json({
+            message: 'Top 10 buy bids by quantity retrieved successfully',
+            buyBids: sortedBids
+        });
+    } catch (error) {
+        console.error('Error fetching buy bids:', error);
+        res.status(200).json({
+            message: 'Error occurred but returning empty array',
+            buyBids: []
+        });
+    }
+});
+
+// Sell and buy order amtch logic
+
+
+
+const resolveMarket = async (tokenemail, tokenname) => {
+  const BuyTicket = await BuyTicketModel.findOne({ tokenemail, name: tokenname });
+  const SellTicket = await SellTicketModel.findOne({ tokenemail, name: tokenname });
+
+  if (!BuyTicket || !SellTicket) return;
+
+  // ✅ Max-heap for buy (highest price first)
+  const buyHeap = new Heap((a, b) =>
+    b.price !== a.price ? b.price - a.price : new Date(a.time) - new Date(b.time)
+  );
+
+  // ✅ Min-heap for sell (lowest price first)
+  const sellHeap = new Heap((a, b) =>
+    a.price !== b.price ? a.price - b.price : new Date(a.time) - new Date(b.time)
+  );
+
+  // Insert all existing orders into the heaps
+  BuyTicket.Tickets.forEach(ticket => buyHeap.push(ticket));
+  SellTicket.Tickets.forEach(ticket => sellHeap.push(ticket));
+
+  while (!buyHeap.isEmpty() && !sellHeap.isEmpty()) {
+    const buy = buyHeap.peek();
+    const sell = sellHeap.peek();
+
+    // If the best buy can't meet the best sell, break
+    if (buy.price < sell.price) break;
+
+    const tradeQty = Math.min(buy.quantity, sell.quantity);
+    const tradePrice = sell.price;
+
+    const buyerEmail = buy.useremail;
+    const sellerEmail = sell.useremail;
+
+    // ✅ Update buyer portfolio
+    const buyerDoc = await UserTokenModel.findOne({ email: buyerEmail });
+    const buyerToken = buyerDoc?.tokens?.find(t => t.tokename === tokenname);
+
+    if (buyerToken) {
+        const oldQty = buyerToken.quantity;
+        const oldAvg = buyerToken.avgprice;
+      
+        const newQty = oldQty + tradeQty;
+        const newAvg = ((oldQty * oldAvg) + (tradeQty * tradePrice)) / newQty;
+      
+        await UserTokenModel.updateOne(
+          { email: buyerEmail, "tokens.tokename": tokenname },
+          {
+            $set: { "tokens.$.avgprice": newAvg },
+            $inc: { "tokens.$.quantity": tradeQty }
+          }
+        );
+      } else {
+        await UserTokenModel.updateOne(
+          { email: buyerEmail },
+          {
+            $push: {
+              tokens: {
+                tokename: tokenname,
+                tokenmail: tokenemail,
+                quantity: tradeQty,
+                avgprice: tradePrice,
+              },
+            },
+          },
+          { upsert: true }
+        );
+      }
+      
+      
+
+    // Adjust orders
+    buy.quantity -= tradeQty;
+    sell.quantity -= tradeQty;
+
+    await VirtualTokenModel.findOneAndUpdate(
+        { email: tokenemail, TokenName: tokenname },
+        { $set: { CurrentPrice: tradePrice.toString() } }
+      );
+    // Update heap
+    buyHeap.pop();
+    if (buy.quantity > 0) buyHeap.push(buy);
+
+    sellHeap.pop();
+    if (sell.quantity > 0) sellHeap.push(sell);
+  }
+
+  app.delete("/api/cancel-sell-ticket", async (req, res) => {
+    const { useremail, tokenemail, tokenname, time, quantity } = req.body;
+  
+    const qty = Number(quantity);
+  
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({ message: "Invalid quantity" });
+    }
+  
+    try {
+      const ticket = await SellTicketModel.findOneAndUpdate(
+        { tokenemail, name: tokenname },
+        { $pull: { Tickets: { useremail, time: new Date(time) } } },
+        { new: true }
+      );
+  
+      if (!ticket) {
+        return res.status(404).json({ message: "Sell ticket not found" });
+      }
+  
+      let userToken = await UserTokenModel.findOne({ email: useremail });
+  
+      if (!userToken) {
+        userToken = new UserTokenModel({
+          email: useremail,
+          tokens: [{
+            tokename: tokenname,
+            tokenmail: tokenemail,
+            quantity: qty,
+            avgprice: 0,
+          }]
+        });
+      } else {
+        const tokenIndex = userToken.tokens.findIndex(
+          (t) => t.tokename === tokenname && t.tokenmail === tokenemail
+        );
+  
+        if (tokenIndex !== -1) {
+          userToken.tokens[tokenIndex].quantity += qty;
+        } else {
+          userToken.tokens.push({
+            tokename: tokenname,
+            tokenmail: tokenemail,
+            quantity: qty,
+            avgprice: 0
+          });
+        }
+      }
+  
+      await userToken.save();
+  
+      res.status(200).json({
+        message: "Sell ticket cancelled and user tokens updated",
+        ticket,
+        userToken
+      });
+    } catch (error) {
+      console.error("Error cancelling sell ticket:", error);
+      res.status(500).json({ message: "Server error while cancelling sell ticket" });
+    }
+  });
+  
+      
+  // Save updated orders
+  const remainingBuy = [];
+  const remainingSell = [];
+  while (!buyHeap.isEmpty()) remainingBuy.push(buyHeap.pop());
+  while (!sellHeap.isEmpty()) remainingSell.push(sellHeap.pop());
+
+  BuyTicket.Tickets = remainingBuy;
+  SellTicket.Tickets = remainingSell;
+
+  await BuyTicket.save();
+  await SellTicket.save();
+};
+
+
+
+app.post("/buy-token", async (req, res) => {
+    const { email, tokenemail, tokenname, quantity, price } = req.body;
+    console.log(email);
+    try {
+      const newTicket = {
+        useremail: email, // ✅ correct key for schema
+        quantity,
+        price,
+        time: new Date()
+      };
+  
+      // Check if BuyTicket doc already exists
+      let ticketDoc = await BuyTicketModel.findOne({
+        tokenemail,
+        name: tokenname
+      });
+  
+      if (ticketDoc) {
+        ticketDoc.Tickets.push(newTicket);
+        await ticketDoc.save();
+      } else {
+        ticketDoc = new BuyTicketModel({
+          tokenemail,
+          name: tokenname,
+          Tickets: [newTicket] // ✅ correct field name used
+        });
+        await ticketDoc.save();
+      }
+      await resolveMarket(tokenemail, tokenname);
+      res.status(200).json({ message: "Buy ticket placed successfully", ticket: ticketDoc });
+    } catch (error) {
+      console.error("Error placing buy ticket:", error);
+      res.status(500).json({ message: "Server error while placing buy ticket" });
+    }
+  });
+  
+  
+  
+
+  app.post("/sell-token", async (req, res) => {
+    const { email, tokenemail, tokenname, quantity, price } = req.body;
+    console.log("Incoming Sell Request:", req.body);
+  
+    try {
+      const userTokenDoc = await UserTokenModel.findOne({ email });
+      if (!userTokenDoc) {
+
+        return res.status(404).json({ message: "User tokens not found" });
+      }
+  
+      const tokenIndex = userTokenDoc.tokens.findIndex(
+        (t) => t.tokename === tokenname && t.tokenmail === tokenemail
+      );
+      
+      
+      if (tokenIndex === -1) {
+        return res.status(400).json({ message: "User doesn't own this token" });
+      }
+  
+      const userToken = userTokenDoc.tokens[tokenIndex];
+  
+      if (userToken.quantity < quantity) {
+        return res.status(400).json({ message: "Insufficient token quantity" });
+      }
+  
+      userToken.quantity -= quantity;
+      await userTokenDoc.save();
+      
+      
+      let ticketDoc = await SellTicketModel.findOne({
+        tokenemail,
+        name: tokenname
+      });
+  
+      const newTicket = {
+        useremail:email,
+        quantity,
+        price,
+        time: new Date()
+      };
+  
+      if (ticketDoc) {
+        ticketDoc.Tickets.push(newTicket);
+        await ticketDoc.save();
+        console.log("Sell ticket updated");
+      } else {
+        ticketDoc = new SellTicketModel({
+          tokenemail,
+          name: tokenname,
+          Tickets: [newTicket]
+        });
+        await ticketDoc.save();
+
+        await resolveMarket(tokenemail, tokenname);
+
+        console.log("Sell ticket created");
+      }
+  
+      return res.status(200).json({ message: "Sell ticket placed", ticket: ticketDoc });
+    } catch (error) {
+      console.error("Error in /sell-token:", error);
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  });
+  
+  // Get all BUY tickets of a user for a specific token
+app.get("/api/user-buy-tickets", async (req, res) => {
+    const { useremail, tokenemail, tokenname } = req.query;
+  
+    try {
+      const buyTicket = await BuyTicketModel.findOne({ tokenemail, name: tokenname });
+      if (!buyTicket) return res.json({ tickets: [] });
+  
+      const userTickets = buyTicket.Tickets.filter(t => t.useremail === useremail);
+      res.json({ tickets: userTickets });
+    } catch (err) {
+      console.error("Error fetching user buy tickets:", err);
+      res.status(500).json({ error: "Failed to fetch buy tickets" });
+    }
+  });
+  
+  // Get all SELL tickets of a user for a specific token
+  app.get("/api/user-sell-tickets", async (req, res) => {
+    const { useremail, tokenemail, tokenname } = req.query;
+  
+    try {
+      const sellTicket = await SellTicketModel.findOne({ tokenemail, name: tokenname });
+      if (!sellTicket) return res.json({ tickets: [] });
+  
+      const userTickets = sellTicket.Tickets.filter(t => t.useremail === useremail);
+      res.json({ tickets: userTickets });
+    } catch (err) {
+      console.error("Error fetching user sell tickets:", err);
+      res.status(500).json({ error: "Failed to fetch sell tickets" });
+    }
+  });
+    // Cancel Buy Ticket
+    app.delete("/api/cancel-buy-ticket", async (req, res) => {
+    const { useremail, tokenemail, tokenname, time } = req.body;
+  
+    try {
+      const ticket = await BuyTicketModel.findOneAndUpdate(
+        { tokenemail, name: tokenname },
+        { $pull: { Tickets: { useremail, time: new Date(time) } } },
+        { new: true }
+      );
+  
+      if (!ticket) {
+        return res.status(404).json({ message: "Buy ticket not found" });
+      }
+  
+      res.status(200).json({ message: "Buy ticket cancelled successfully", ticket });
+    } catch (error) {
+      console.error("Error cancelling buy ticket:", error);
+      res.status(500).json({ message: "Server error while cancelling buy ticket" });
+    }
+  });
+
+  
+  
 app.get("/api/user-tokens/:email", async (req, res) => {
     try {
         const { email } = req.params;
@@ -168,6 +563,11 @@ app.get("/api/virtual-assets", async (req, res) => {
         res.status(500).json({ error: error.message }); // Send actual error message
     }
 });
+
+
+// Exchange's matching engine.
+
+
 app.get("/api/virtual-assets-with-product/:email", async (req, res) => {
     const { email } = req.params;
 

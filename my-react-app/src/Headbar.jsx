@@ -5,20 +5,24 @@ import projectlogo from "./assets/logo_text.png";
 import searchicon from "./assets/search_icon.png";
 import SearchBar from "./SearchBar/SearchBar";
 
+
 function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
+
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
     setDropdownOpen(!dropdownOpen);
   };
 
+
   const closeDropdown = () => {
     setMenuOpen(false);
     setDropdownOpen(false);
   };
+
 
   const handleLogout = () => {
     setUserName("Guest");
@@ -27,12 +31,14 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
     navigate("/login");
   };
 
+
   const handleProfileRedirect = () => {
     closeDropdown();
     if (userData?.email) {
       navigate(`/profile/${userData.email}`);
     }
   };
+
 
   const handleMyProductsRedirect = () => {
     closeDropdown();
@@ -41,9 +47,11 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
     }
   };
 
+
   return (
     <div className="navbar">
       <img src={projectlogo} alt="Project Logo" className="logo" />
+
 
       <ul className={`lists ${menuOpen ? "open" : ""}`}>
         <li>
@@ -57,7 +65,7 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
           </NavLink>
         </li>
         <li>
-          <NavLink to="/VirtualAssets" className={({ isActive }) => (isActive ? "active-link" : "")}>
+          <NavLink to="/VirtualAssets" className={({ isActive }) => (isActive ? "active-link" : "")} state={{ userEmail: userData?.email }}>
             Virtual Assets
           </NavLink>
         </li>
@@ -68,7 +76,9 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
         </li>
       </ul>
 
+
       <SearchBar></SearchBar>
+
 
       <div className="hamburger-icon" onClick={toggleMenu}>
         <div className={`bar ${menuOpen ? "open" : ""}`}></div>
@@ -76,12 +86,13 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
         <div className={`bar ${menuOpen ? "open" : ""}`}></div>
       </div>
 
+
       {dropdownOpen && (
         <div className="dropdown-div">
           {isLoggedIn ? (
             <div className="content">
               <h3>Welcome, {userName}!</h3>
-              
+             
               {userData?.type === "company" ? (
                 <button onClick={handleMyProductsRedirect} className="profile-btn">
                   My Products
@@ -91,6 +102,7 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
                   My Profile
                 </button>
               )}
+
 
               <button onClick={handleLogout} className="logout-btn">
                 Logout
@@ -110,4 +122,10 @@ function Headbar({ isLoggedIn, userName, setUserName, setIsLoggedIn, userData })
   );
 }
 
+
 export default Headbar;
+
+
+
+
+

@@ -87,3 +87,179 @@
 .overview p {
     margin: 5px 0;
 }
+.bidsSection {
+    width: 100%;
+    max-width: 800px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.bidsContainer {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.bidsColumn {
+    flex: 1;
+}
+
+.bidsColumn h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.bidsHeader {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.bidRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background-color: white;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sellPrice {
+    color: #dc3545; /* Red for sell prices */
+}
+
+.buyPrice {
+    color: #28a745; /* Green for buy prices */
+}
+
+/* New styles for the sidebar and trading components */
+.tradingContainer {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    gap: 20px;
+}
+
+.tradingSidebar {
+    width: 280px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    align-self: flex-start;
+    position: sticky;
+    top: 20px;
+}
+
+.tradingMain {
+    flex: 1;
+}
+
+.tradingActions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.buyBtn, .sellBtn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.buyBtn {
+    background-color: #28a745;
+    color: white;
+}
+
+.buyBtn:hover {
+    background-color: #218838;
+}
+
+.sellBtn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.sellBtn:hover {
+    background-color: #c82333;
+}
+
+.tradingFormGroup {
+    margin-bottom: 15px;
+}
+
+.tradingFormGroup label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.tradingFormGroup input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.orderSummary {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.orderSummaryItem {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.orderTotal {
+    font-weight: bold;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tradingContainer {
+        flex-direction: column;
+    }
+    
+    .tradingSidebar {
+        width: 100%;
+        position: static;
+        margin-bottom: 20px;
+    }
+}
+.userTickets {
+    margin-top: 20px;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+    color: white;
+  }
+  .ticketsSection {
+    margin-top: 10px;
+  }
+  .ticketItem {
+    background-color: #222;
+    padding: 5px;
+    margin: 3px 0;
+    border-radius: 4px;
+  }
+  
